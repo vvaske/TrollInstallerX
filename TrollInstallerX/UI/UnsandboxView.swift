@@ -21,15 +21,17 @@ struct UnsandboxView: View {
                     .foregroundColor(.white)
                 Button(action: {
                     UIImpactFeedbackGenerator().impactOccurred()
-                    grant_full_disk_access({ error in
-                        if let error = error {
-                            Logger.log("Failed to exploit with MacDirtyCow!")
-                            NSLog("Failed to MacDirtyCow - \(error.localizedDescription)")
-                        }
-                        withAnimation {
-                            isShowingMDCAlert = false
-                        }
-                    })
+                    DispatchQueue.global(qos: .utility).async {
+                        grant_full_disk_access({ error in
+                            if let error = error {
+                                Logger.log("Failed to exploit with MacDirtyCow!")
+                                NSLog("Failed to MacDirtyCow - \(error.localizedDescription)")
+                            }
+                            withAnimation {
+                                isShowingMDCAlert = false
+                            }
+                        })
+                    }
                 }, label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
