@@ -134,14 +134,12 @@ func doDirectInstall(_ device: Device) async -> Bool {
         }
         
         if device.isArm64e {
-            Logger.log("Deinitialising PPL bypass (\(dmaFail.name))")
             if !dmaFail.deinitialise() {
                 Logger.log("Failed to deinitialise \(dmaFail.name)", type: .error)
                 return false
             }
         }
         
-        Logger.log("Deinitialising kernel exploit (\(exploit.name))")
         if !exploit.deinitialise() {
             Logger.log("Failed to deinitialise \(exploit.name)", type: .error)
             return false
@@ -206,7 +204,7 @@ func doDirectInstall(_ device: Device) async -> Bool {
     
     if persistenceID != "" {
         if install_persistence_helper(persistenceID) {
-            Logger.log("Successfully installed persistence helper", type: .success)
+            Logger.log("Successfully installed persistence helper!", type: .success)
         } else {
             Logger.log("Failed to install persistence helper", type: .error)
         }
@@ -216,7 +214,7 @@ func doDirectInstall(_ device: Device) async -> Bool {
     if !install_trollstore(useLocalCopy ? "/private/preboot/tmp/TrollStore.tar" : Bundle.main.bundlePath + "/TrollStore.tar") {
         Logger.log("Failed to install TrollStore", type: .error)
     } else {
-        Logger.log("Successfully installed TrollStore", type: .success)
+        Logger.log("Successfully installed TrollStore!", type: .success)
     }
     
     if !cleanupPrivatePreboot() {
@@ -228,14 +226,12 @@ func doDirectInstall(_ device: Device) async -> Bool {
             Logger.log("Failed to drop root privileges", type: .error)
             return false
         }
-        Logger.log("Deinitialising kernel exploit (\(exploit.name))")
         if !exploit.deinitialise() {
             Logger.log("Failed to deinitialise \(exploit.name)", type: .error)
             return false
         }
     }
     
-    Logger.log("Successfully installed TrollStore!", type: .success)
     return true
 }
 
@@ -267,7 +263,6 @@ func doIndirectInstall(_ device: Device) async -> Bool {
         return false
     }
     defer {
-        Logger.log("Deinitialising kernel exploit (\(exploit.name))")
         if !exploit.deinitialise() {
             Logger.log("Failed to deinitialise \(exploit.name)", type: .error)
         }
@@ -275,8 +270,12 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     Logger.log("Successfully exploited the kernel", type: .success)
     post_kernel_exploit(false)
     
-    if is_persistence_helper_installed() {
-        Logger.log("Persistence helper already installed!")
+    var path: UnsafePointer<CChar>? = nil
+    let pathPointer = withUnsafeMutablePointer(to: &path) { ptr in
+        UnsafeMutablePointer<UnsafePointer<CChar>?>.init(ptr)
+    }
+    if is_persistence_helper_installed(pathPointer) {
+        Logger.log("Persistence helper already installed! (\(path == nil ? "unknown" : String(cString: path!)))", type: .warning)
         return false
     }
     
@@ -325,6 +324,5 @@ func doIndirectInstall(_ device: Device) async -> Bool {
         }
     }
     
-    Logger.log("Successfully installed persistence helper!", type: .success)
     return true
 }
